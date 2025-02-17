@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_cont
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Pivo
+      POSTGRES_DB: wallets_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d wallets_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  back-image:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: back_cont
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/wallets_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Pivo
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  #tests:
+    #build: .
+    #container_name: test_cont
+    #environment:
+    #  SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/wallets_db
+    #  SPRING_DATASOURCE_USERNAME: postgres
+    #  SPRING_DATASOURCE_PASSWORD: Pivo
+    #depends_on:
+    #  db:
+    #    condition: service_healthy
+    #command: [ "./mvnw", "test" ]
+
+volumes:
+  postgres_data:
